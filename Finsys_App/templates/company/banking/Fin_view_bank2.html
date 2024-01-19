@@ -1,0 +1,541 @@
+{% extends 'company/Fin_base.html' %}
+{% load static %}
+{% block body %}
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/all.min.css">
+<script>
+    function showAlertdelet() {
+        alert("You Can't Delete, pls go to loan section");
+    }
+    function showAlertedit() {
+        alert("You Can't Edit, pls go to loan section");
+    }
+
+</script>
+
+<div class="page-content">
+    <div class="card radius-15 h-20 p-3">
+        <div class="row">
+            <div class="col-md-9">
+                <h5>BANK: <span style="font-size: x-large;">{{bank.bank_name}}</span></h5>
+                <h5>Opening Balance: <span style="font-size: x-large;">{{bank.opening_balance}}</span></h5>
+            </div>
+            <div class="col-md-3 mt-4 text-right">
+                <h5 class="mt-1">Balance: <span style="font-size: x-large;">{{bank.current_balance}}</span></h5>
+            </div>
+
+            <hr style="width: 95%">
+
+            <div class="right text-right ml-auto">
+                <center>
+                    {% if bank.bank_status == 'Inactive' %}
+                    <a class="btn btn-outline-info   text-grey mt-3 " style="border: 1px solid rgb(1, 100, 139);"
+                        href="">In Active</a>
+                    {% else %}
+                    <a class="btn btn-outline-info   text-grey mt-3 " style="border: 1px solid rgb(1, 100, 139);"
+                        href="">Active</a>
+                    {% endif %}
+                    <a class="btn btn-outline-info   text-grey mt-3 " style="border: 1px solid rgb(1, 100, 139);"
+                        onclick="ExportToExcel('xlsx')">Export To Excel</a>
+
+                    <a class="btn btn-outline-info   text-grey mt-3 " style="border: 1px solid rgb(1, 100, 139);"
+                        href="">Edit Bank</a>
+                    <a class="btn btn-outline-info   text-grey mt-3 " style="border: 1px solid rgb(1, 100, 139);"
+                        href="">Delete</a>
+
+                    <a class="btn btn-outline-info dropdown-toggle   text-grey mt-3 "
+                        style="border: 1px solid rgb(1, 100, 139);" class=" dropdown-toggle"
+                        data-toggle="dropdown">Transaction</a>
+                    <div class="dropdown-menu" class="btn btn-outline-info dropdown-toggle   text-grey mt-3 "
+                        style="background-color: black;">
+                        <a class="dropdown-item" id="b2c" href=""
+                            style="height: 40px; font-size: 15px; color: white;">Bank To Cash Transfer</a>
+                        <a class="dropdown-item" href="" style="height: 40px; font-size: 15px; color: white;">Cash To
+                            Bank Transfer</a>
+                        <a class="dropdown-item" href="" style="height: 40px; font-size: 15px; color: white;">Bank To
+                            Bank Transfer</a>
+                        <a class="dropdown-item" href="" style="height: 40px; font-size: 15px; color: white;">Adjust
+                            Bank Balance</a>
+                    </div>
+
+                    <a class="btn btn-outline-info dropdown-toggle   text-grey mt-3 "
+                        style="border: 1px solid rgb(1, 100, 139);" href="">Statement</a>
+                </center>
+            </div>
+        </div>
+    </div>
+
+
+    <div class="card radius-15">
+        <div class="card-body">
+            <div class="container-fluid">
+
+
+
+                <h3 class="">All Transactions</h3>
+                <div class="row">
+                    <div class="col-md-5 col-auto">
+                        <div class="search-bar">
+                            <div class="input-group">
+                                <div class="input-group-prepend search-arrow-back">
+                                    <button class="btn btn-search-back" type="button"><i
+                                            class="bx bx-arrow-back"></i></button>
+                                </div>
+                                <input class="form-control" type="search" id="searchInput" placeholder="Search"
+                                    aria-label="Search">
+                                <div class="input-group-append">
+                                    <button class="btn btn-search" type="button"><i
+                                            class="lni lni-search-alt"></i></button>
+                                </div>
+
+
+                            </div>
+                        </div>
+
+
+                    </div>
+                    <div class="col-md-3">
+
+                    </div>
+
+                </div>
+                <div class="table-responsive">
+                    <table class="table table-responsive-md table-hover mt-4" id="tabletobe">
+                        <thead>
+                            <tr>
+                                <!-- Inside the <thead> section of your table -->
+                                <th>
+                                    <div class="dropdown">
+                                        <h6 class="  text-grey">DATE
+                                        </h6>
+
+                                    </div>
+                                </th>
+                                <th>
+
+                                    <h6 class="  text-grey">TYPE</h6>
+
+                                </th>
+                                <!-- Inside the <thead> section of your table -->
+                                <th>
+                                    <div class="dropdown">
+                                        <h6 class="  text-grey">NAME
+                                        </h6>
+
+                                    </div>
+                                </th>
+
+
+                                <th>
+                                    <h6>AMOUNT</h6>
+                                </th>
+                                <th>
+                                    <h6>ACTION</h6>
+                                </th>
+
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for a in trans %}
+                            <tr>
+                                <td>{{ a.adj_date }}</td>
+                                <td>{{ a.type }}</td>
+                                <td>{{ a.bank_type }}</td>
+                                {% if a.type == 'CASH WITHDRAW' %}
+                                <td style="font-size: medium;">-{{ a.amount }}</td>
+                                {% elif a.type == 'BANK ADJ INCREASE' %}
+                                <td style="font-size: medium;">{{ a.amount }}</td>
+                                {% elif a.type == 'BANK ADJ REDUCE' %}
+                                <td style="font-size: medium;">-{{ a.amount }}</td>
+                                {% elif a.type == 'TO BANK TRANSFER' %}
+                                <td style="font-size: medium;">{{ a.amount }}</td>
+                                {% elif a.type == 'FROM BANK TRANSFER' %}
+                                <td style="font-size: medium;">-{{ a.amount }}</td>
+
+                                {% else %}
+                                <td style="font-size: medium;">{{ a.amount }}</td>
+                                {% endif %}
+                                </td></a>
+                                <td>
+                                    <div class="dropdown">
+                                        <i class="fa fa-ellipsis-v" style="font-size:24px" data-toggle="dropdown"></i>
+                                        <div class="dropdown-menu">
+                                            <a class="dropdown-item edit-item" href="">Edit</a>
+                                            <a class="dropdown-item delete-item" href="#" data-toggle="modal"
+                                                data-target="#deleteModal{{ a.id }}">Delete</a>
+                                        </div>
+                                    </div>
+                                </td>
+                            </tr>
+
+
+
+
+                            <!-- Delete Confirmation Modal -->
+                            <div class="modal fade" id="deleteModal{{ a.id }}" tabindex="-1" role="dialog"
+                                aria-labelledby="deleteModalLabel" aria-hidden="true">
+                                <div class="modal-dialog" role="document">
+                                    <div class="modal-content">
+                                        <div class="modal-header">
+                                            <h5 class="modal-title" id="deleteModalLabel">Confirm Delete</h5>
+                                            <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                                                <span aria-hidden="true">&times;</span>
+                                            </button>
+                                        </div>
+                                        <div class="modal-body">
+                                            Are you sure you want to delete this item?
+                                        </div>
+                                        <div class="modal-footer">
+                                            <button type="button" class="btn btn-secondary"
+                                                data-dismiss="modal">Cancel</button>
+                                            <a href="" class="btn btn-danger">Delete</a>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            {% endfor %}
+
+                            {% for i in emp_loan %}
+                            <tr>
+                                <td>{{i.loan_trans_date}}</td>
+                                <td>{{i.particular}}</td>
+                                <td>{{i.payment_type}}</td>
+
+                                <td>{{i.amount}}</td>
+                                <td>
+                                    <div class="dropdown">
+                                        <i class="fa fa-ellipsis-v" style="font-size:24px" data-toggle="dropdown"></i>
+                                        <div class="dropdown-menu">
+                                            <a class="dropdown-item edit-item" href="javascript:void(0);"
+                                                onclick="showAlertedit()">Edit</a>
+                                            <a class="dropdown-item delete-item" href="javascript:void(0);"
+                                                onclick="showAlertdelet()">Delete</a>
+                                        </div>
+                                    </div>
+                                </td>
+                            </tr>
+                            {% endfor %}
+
+                            {% for i in toloan %}
+                            <tr>
+                                <td>{{i.loan_date}}</td>
+                                <td>{{i.bank_type}}</td>
+                                <td>{{i.type}}</td>
+
+                                <td>{{i.loan_amount}}</td>
+                                <td>
+                                    <div class="dropdown">
+                                        <i class="fa fa-ellipsis-v" style="font-size:24px" data-toggle="dropdown"></i>
+                                        <div class="dropdown-menu">
+                                            <a class="dropdown-item edit-item" href="javascript:void(0);"
+                                                onclick="showAlertedit()">Edit</a>
+                                            <a class="dropdown-item delete-item" href="javascript:void(0);"
+                                                onclick="showAlertdelet()">Delete</a>
+                                        </div>
+                                    </div>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                            {% for i in getloan %}
+                            <tr>
+                                <td>{{i.loan_date}}</td>
+                                <td>{{i.bank_type}}</td>
+                                <td>{{i.type}}</td>
+
+                                <td>{{i.loan_amount}}</td>
+                                <td>
+                                    <div class="dropdown">
+                                        <i class="fa fa-ellipsis-v" style="font-size:24px" data-toggle="dropdown"></i>
+                                        <div class="dropdown-menu">
+                                            <a class="dropdown-item edit-item" href="javascript:void(0);"
+                                                onclick="showAlertedit()">Edit</a>
+                                            <a class="dropdown-item delete-item" href="javascript:void(0);"
+                                                onclick="showAlertdelet()">Delete</a>
+                                        </div>
+                                    </div>
+                                </td>
+                            </tr>
+                            {% endfor %}
+
+
+                            {% for p in pbill %}
+                            <tr>
+                                <td>{{ p.date | date:'d-m-Y' }}</td>
+                                <td>PURCHASE BILL</a></td>
+                                <td>{{ p.vendor_name }}</td>
+
+
+
+                                {% if p.balance_amount > 0 %}
+                                <td>{{ p.paid_amount }}</td>
+                                {% else %}
+                                <td>0.0</td>
+                                {% endif %}
+                                <td>
+                                    <div class="dropdown">
+                                        <i class="fa fa-ellipsis-v" style="font-size:24px" data-toggle="dropdown"></i>
+                                        <div class="dropdown-menu">
+                                            <a class="dropdown-item edit-item" href="javascript:void(0);"
+                                                onclick="showAlertedit()">Edit</a>
+                                            <a class="dropdown-item delete-item" href="javascript:void(0);"
+                                                onclick="showAlertdelet()">Delete</a>
+                                        </div>
+                                    </div>
+                                </td>
+
+                            </tr>
+                            {% endfor %}
+                            {% for p in pordr %}
+                            <tr>
+                                <td>{{ p.date| date:'d-m-Y' }}</td>
+                                <td>PURCHASE ORDER</a></td>
+                                <th>{{ p.vendor_name }}</th>
+
+
+                                <td>{{ p.paid_amount }}</td>
+
+                                <td>
+                                    <div class="dropdown">
+                                        <i class="fa fa-ellipsis-v" style="font-size:24px" data-toggle="dropdown"></i>
+                                        <div class="dropdown-menu">
+                                            <a class="dropdown-item edit-item" href="javascript:void(0);"
+                                                onclick="showAlertedit()">Edit</a>
+                                            <a class="dropdown-item delete-item" href="javascript:void(0);"
+                                                onclick="showAlertdelet()">Delete</a>
+                                        </div>
+                                    </div>
+                                </td>
+
+
+                            </tr>
+                            {% endfor %}
+                            {% for p in py %}
+                            <tr>
+                                <td>{{ p.paymentdate |date:'d-m-Y' }}</td>
+                                <td>PURCHASE PAYMENT</td>
+
+                                <td>{{ p.vendor }}</td>
+                                <td>{{ p.amtreceived }}</td>
+                                <td>
+                                    <div class="dropdown">
+                                        <i class="fa fa-ellipsis-v" style="font-size:24px" data-toggle="dropdown"></i>
+                                        <div class="dropdown-menu">
+                                            <a class="dropdown-item edit-item" href="javascript:void(0);"
+                                                onclick="showAlertedit()">Edit</a>
+                                            <a class="dropdown-item delete-item" href="javascript:void(0);"
+                                                onclick="showAlertdelet()">Delete</a>
+                                        </div>
+                                    </div>
+                                </td>
+                            </tr>
+                            {% endfor %}
+
+                            {% for r in rbill %}
+                            <!-- <tr> -->
+                            <tr>
+                                <th>{{ r.start_date | date:'d-m-Y' }}</th>
+                                <td>RECURRING BILL</a></td>
+                                <td>{{ r.vendor_name }}</td>
+
+                                <td>{{ r.paid_amount}}</td>
+                                <td>
+                                    <div class="dropdown">
+                                        <i class="fa fa-ellipsis-v" style="font-size:24px" data-toggle="dropdown"></i>
+                                        <div class="dropdown-menu">
+                                            <a class="dropdown-item edit-item" href="javascript:void(0);"
+                                                onclick="showAlertedit()">Edit</a>
+                                            <a class="dropdown-item delete-item" href="javascript:void(0);"
+                                                onclick="showAlertdelet()">Delete</a>
+                                        </div>
+                                    </div>
+                                </td>
+                            </tr>
+                            {% endfor %}
+
+
+
+
+
+
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+
+
+
+        </div>
+    </div>
+
+
+    <!-- Bank To Cash Transfer Modal -->
+
+</div>
+</div>
+
+< <!-- Adjust Bank Balance Modal -->
+
+    </div>
+
+    <script type="text/javascript" src="https://unpkg.com/xlsx@0.15.1/dist/xlsx.full.min.js"></script>
+
+    <script type="text/javascript">function ExportToExcel(type, fn, dl) {
+            var elt = document.getElementById('tabletobe');
+            var wb = XLSX.utils.table_to_book(elt, { sheet: "sheet1" });
+            return dl ?
+                XLSX.write(wb, { bookType: type, bookSST: true, type: 'base64' }) :
+                XLSX.writeFile(wb, fn || ('Transaction.' + (type || 'xlsx')));
+        }
+
+    </script>
+
+    <script>
+        jQuery(document).ready(function ($) {
+            $(".clickable-row").click(function () {
+                window.location = $(this).data("href");
+            });
+        });
+    </script>
+
+    <script>
+        function sortTableBySalary(order) {
+            const table = document.getElementById('tabletobe');
+            const rows = Array.from(table.getElementsByTagName('tr'));
+
+            rows.shift(); // Remove the table header row from sorting
+
+            rows.sort(function (a, b) {
+                const salaryA = parseFloat(a.querySelector('td:nth-child(6)').textContent);
+                const salaryB = parseFloat(b.querySelector('td:nth-child(6)').textContent);
+
+                if (order === 'asc') {
+                    return salaryA - salaryB;
+                } else if (order === 'desc') {
+                    return salaryB - salaryA;
+                }
+            });
+
+            rows.forEach(function (row) {
+                table.appendChild(row);
+            });
+        }
+    </script>
+
+
+    <script>
+        function sortTable(order) {
+            const table = document.getElementById('tabletobe');
+            const rows = Array.from(table.getElementsByTagName('tr'));
+
+            rows.shift(); // Remove the table header row from sorting
+
+            rows.sort(function (a, b) {
+                const bankNameA = a.querySelector('td:first-child').textContent;
+                const bankNameB = b.querySelector('td:first-child').textContent;
+
+                if (order === 'asc') {
+                    return bankNameA.localeCompare(bankNameB);
+                } else if (order === 'desc') {
+                    return bankNameB.localeCompare(bankNameA);
+                }
+            });
+
+            rows.forEach(function (row) {
+                table.appendChild(row);
+            });
+        }
+    </script>
+    <!-- Edit Modal -->
+    <script>
+        function sortTableBySalary(order) {
+            const table = document.getElementById('tabletobe');
+            const rows = Array.from(table.getElementsByTagName('tr'));
+
+            rows.shift(); // Remove the table header row from sorting
+
+            rows.sort(function (a, b) {
+                const salaryA = parseFloat(a.querySelector('td:nth-child(4)').textContent);
+                const salaryB = parseFloat(b.querySelector('td:nth-child(4)').textContent);
+
+                if (order === 'asc') {
+                    return salaryA - salaryB;
+                } else if (order === 'desc') {
+                    return salaryB - salaryA;
+                }
+            });
+
+            rows.forEach(function (row) {
+                table.appendChild(row);
+            });
+        }
+    </script>
+
+
+    <script>
+        function sortTable(order) {
+            const table = document.getElementById('tabletobe');
+            const rows = Array.from(table.getElementsByTagName('tr'));
+
+            rows.shift(); // Remove the table header row from sorting
+
+            rows.sort(function (a, b) {
+                const bankNameA = a.querySelector('td:nth-child(2)').textContent;
+                const bankNameB = b.querySelector('td:nth-child(2)').textContent;
+
+                if (order === 'asc') {
+                    return bankNameA.localeCompare(bankNameB);
+                } else if (order === 'desc') {
+                    return bankNameB.localeCompare(bankNameA);
+                }
+            });
+
+            rows.forEach(function (row) {
+                table.appendChild(row);
+            });
+        }
+    </script>
+    <script>
+        $(document).ready(function () {
+            $(".edit-item").on("click", function () {
+                $("#editModal").modal("show");
+            });
+        });
+    </script>
+
+
+    <script>
+        // Get the input element and table rows
+        const searchInput = document.getElementById('searchInput');
+        const tableRows = document.querySelectorAll('#tabletobe tbody tr');
+
+        // Add an event listener to the search input
+        searchInput.addEventListener('input', function () {
+            const searchText = this.value.toLowerCase();
+
+            // Loop through each table row and hide/show based on search text
+            tableRows.forEach(row => {
+                let foundMatch = false;
+                const cells = row.querySelectorAll('td'); // Select all <td> elements within the row
+
+                cells.forEach(cell => {
+                    const cellText = cell.textContent.toLowerCase();
+                    if (cellText.includes(searchText)) {
+                        foundMatch = true;
+                    }
+                });
+
+                // Show or hide the row based on whether a match was found
+                if (foundMatch) {
+                    row.style.display = 'table-row';
+                } else {
+                    row.style.display = 'none';
+                }
+            });
+        });
+    </script>
+
+
+
+
+
+    {% endblock %}
