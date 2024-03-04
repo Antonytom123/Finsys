@@ -27,7 +27,7 @@
     <div class="card radius-15">
         <div class="card-body">
             <div class="container-fluid">
-                <form id="bankForm" method="post" action="">
+                <form id="bankForm" method="post" action="{% url 'Fin_edit_bank_account' bank.id %}">
                     {% csrf_token %}
                     <div class="row">
                         <div class="col-md-5 p-2">
@@ -93,17 +93,17 @@
 
                     <div class="row">
                         <div class="col-md-5 form-inline p-2">
-
-                            <input class="form-control" type="number" name="Opening" value="{{bank.opening_balance}}">
                             <select class="form-control" name="op_type" id="">
                                 <option value="{{bank.opening_balance_type}}" selected>{{bank.opening_balance_type}}</option>
                                 <option value="CREDIT">CREDIT</option>
                                 <option value="DEBIT">DEBIT</option>
 
                             </select>
+                            <input class="form-control" type="number" name="Opening" value="{{bank.opening_balance}}">
+                         
                         </div>
                         <div class="col-md-2">
-
+                            
                         </div>
 
                         <div class="col-md-5 p-2">
@@ -117,6 +117,7 @@
                     <div class="row mb-5">
                         <div class="col-md-8 mt-3"></div>
                         <div class="col-md-2 mt-3">
+                            <a class="btn btn-outline-info rounded-pill w-100 text-grey pull-left" href="{% url 'Fin_banking_listout' %}">Close</a>
 
                         </div>
                         <div class="col-md-2 mt-3">
