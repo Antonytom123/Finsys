@@ -108,8 +108,16 @@ urlpatterns = [
     path('Save_bank_adjust',views.Fin_save_bank_adjust,name='Fin_save_bank_adjust'),
 
     path('Edit_bank/<int:id>',views.Fin_edit_bank,name='Fin_edit_bank'),
-    # path('Edit_bank_account/<int:id>',views.Fin_edit_bank_account,name='Fin_edit_bank_account'),
     path('Change_bank_status/<int:id>',views.Fin_change_bank_status,name='Fin_change_bank_status'),
+
+    path('Fin_edit_bank_account/<int:id>',views.Fin_edit_bank_account,name='Fin_edit_bank_account'),
+    path('Fin_edit_bank_to_cash/<int:id>',views.Fin_edit_bank_to_cash,name='Fin_edit_bank_to_cash'),
+    path('Fin_edit_cash_to_bank/<int:id>',views.Fin_edit_cash_to_bank,name='Fin_edit_cash_to_bank'),
+    path('Fin_edit_bank_to_bank/<int:transfer_id>',views.Fin_edit_bank_to_bank,name='Fin_edit_bank_to_bank'),
+    path('Fin_edit_bank_adjust/<int:id>',views.Fin_edit_bank_adjust,name='Fin_edit_bank_adjust'),
+    path('Fin_edit_bank_trans/<int:id>',views.Fin_edit_bank_trans,name='Fin_edit_bank_trans'),
+    path('Fin_bank_transcation_history/<int:id>',views.Fin_bank_transcation_history,name='Fin_bank_transcation_history'),
+    path('Fin_bank_transaction_delete/<int:id>',views.Fin_bank_transaction_delete,name='Fin_bank_transaction_delete'),
 
 
 

@@ -180,6 +180,22 @@ class Fin_Banking(models.Model):
     current_balance = models.IntegerField(null=True,default=0)
     bank_status = models.CharField(max_length=255,null=True,blank=True) 
 
+class Fin_BankingAttachments(models.Model): 
+
+    login_details = models.ForeignKey(Fin_Login_Details, on_delete=models.CASCADE,null=True,blank=True)
+    company = models.ForeignKey(Fin_Company_Details, on_delete=models.CASCADE,null=True,blank=True)
+    banking = models.ForeignKey(Fin_Banking, on_delete=models.CASCADE,null=True,blank=True)
+    date = models.DateTimeField(auto_now_add=True,null=True)
+    file = models.ImageField(null=True,blank = True,upload_to = 'image/banking')
+
+class Fin_BankingComments(models.Model): 
+
+    login_details = models.ForeignKey(Fin_Login_Details, on_delete=models.CASCADE,null=True,blank=True)
+    company = models.ForeignKey(Fin_Company_Details, on_delete=models.CASCADE,null=True,blank=True)
+    banking = models.ForeignKey(Fin_Banking, on_delete=models.CASCADE,null=True,blank=True)
+    date = models.DateTimeField(auto_now_add=True,null=True)
+    comment = models.CharField(max_length=255,null=True,blank=True)
+
 class Fin_BankingHistory(models.Model): 
 
     login_details = models.ForeignKey(Fin_Login_Details, on_delete=models.CASCADE,null=True,blank=True)
@@ -202,6 +218,7 @@ class Fin_BankTransactions(models.Model):
     transaction_type = models.CharField(max_length=255,null=True,blank=True) 
     adjustment_type = models.CharField(max_length=255,null=True,blank=True) 
     current_balance = models.IntegerField(null=True,default=0)
+    bank_to_bank = models.IntegerField(null=True,default=0)
 
 
 class Fin_BankTransactionHistory(models.Model): 
@@ -211,4 +228,5 @@ class Fin_BankTransactionHistory(models.Model):
     bank_transaction = models.ForeignKey(Fin_BankTransactions, on_delete=models.CASCADE,null=True,blank=True)
     date = models.DateTimeField(auto_now_add=True,null=True)
     action = models.CharField(max_length=255,null=True,blank=True)
+
 

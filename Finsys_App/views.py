@@ -1942,6 +1942,7 @@ def Fin_bank_to_bank(request,id):
        
         return render(request,'company/banking/Fin_bank_to_bank.html',context)
     
+
 def Fin_save_bankTobank(request,id):
     if 's_id' in request.session:
         s_id = request.session['s_id']
@@ -1986,7 +1987,7 @@ def Fin_save_bankTobank(request,id):
                 description=desc,
                 adjustment_date=adj_date,
                 transaction_type='From Bank Transfer', 
-                current_balance= from_bank.current_balance
+                current_balance= from_bank.current_balance,
                                
             )
             transaction_withdraw.save()
@@ -2008,7 +2009,7 @@ def Fin_save_bankTobank(request,id):
                 description=desc,
                 adjustment_date=adj_date,
                 transaction_type='To Bank Transfer', 
-                current_balance= to_bank.current_balance               
+                current_balance= to_bank.current_balance,
             )
             transaction_deposit.save()
             transaction_history = Fin_BankTransactionHistory(
@@ -2019,8 +2020,12 @@ def Fin_save_bankTobank(request,id):
             )
             transaction_history.save()
 
+            transaction_withdraw.bank_to_bank = transaction_deposit.id
+            transaction_deposit.bank_to_bank = transaction_withdraw.id
+            transaction_withdraw.save()
+            transaction_deposit.save()
             
-        return redirect('Fin_view_bank',current_bank.id)   
+        return redirect('Fin_view_bank',current_bank.id) 
     
 def Fin_bank_adjust(request,id):
     if 's_id' in request.session:
@@ -2233,5 +2238,674 @@ def Fin_change_bank_status(request,id):
     bank.save()
 
     return redirect('Fin_view_bank',id=id)
+
+
+#Antony_______________________
+
+
+
+def Fin_edit_cash_to_bank(request,id):
+    if 's_id' in request.session:
+        s_id = request.session['s_id']
+
+        login_det = Fin_Login_Details.objects.get(id = s_id) 
+
+        if login_det.User_Type == 'Company':
+            com = Fin_Company_Details.objects.get(Login_Id = login_det)
+            company = com
+        elif login_det.User_Type == 'Staff':
+            com = Fin_Staff_Details.objects.get(Login_Id = login_det)
+            company = com.company_id
+
+        allmodules = Fin_Modules_List.objects.get(company_id = company,status = 'New')
+        bank=Fin_Banking.objects.get(id = id)
+        all_banks = Fin_Banking.objects.filter(company = company)
+
+        context = {
+                'login_det':login_det,
+                'com':com,
+                'allmodules':allmodules,
+                'bank':bank,
+                'all_banks':all_banks,
+               
+            }  
+       
+        return render(request,'company/banking/Fin_edit_cash_to_bank.html',context)
+    
+
+    
+
+def Fin_edit_bank_adjust(request,id):
+    if 's_id' in request.session:
+        s_id = request.session['s_id']
+
+        login_det = Fin_Login_Details.objects.get(id = s_id) 
+
+        if login_det.User_Type == 'Company':
+            com = Fin_Company_Details.objects.get(Login_Id = login_det)
+            company = com
+        elif login_det.User_Type == 'Staff':
+            com = Fin_Staff_Details.objects.get(Login_Id = login_det)
+            company = com.company_id
+
+        allmodules = Fin_Modules_List.objects.get(company_id = company,status = 'New')
+
+        bank=Fin_Banking.objects.get(id = id)
+        all_banks = Fin_Banking.objects.filter(company = company)
+
+        context = {
+                'login_det':login_det,
+                'com':com,
+                'allmodules':allmodules,
+                'bank':bank,
+                'all_banks':all_banks,
+               
+            }  
+       
+        return render(request,'company/banking/Fin_edit_bank_adjust.html',context)
+    
+def Fin_edit_bank_trans(request,id):
+    if 's_id' in request.session:
+        s_id = request.session['s_id']
+
+        login_det = Fin_Login_Details.objects.get(id = s_id) 
+
+        if login_det.User_Type == 'Company':
+            com = Fin_Company_Details.objects.get(Login_Id = login_det)
+            company = com
+        elif login_det.User_Type == 'Staff':
+            com = Fin_Staff_Details.objects.get(Login_Id = login_det)
+            company = com.company_id
+
+        allmodules = Fin_Modules_List.objects.get(company_id = company,status = 'New')
+        # banknew=Fin_BankTransactions.objects.get(id=id)
+        bank=Fin_BankTransactions.objects.get(id=id)
+        try:
+            banks = Fin_BankTransactions.objects.get(id=bank.bank_to_bank)
+        except:
+            banks = None
+        all_banks = Fin_Banking.objects.filter(company = company)
+        print(all_banks)
+    context = {
+            'login_det':login_det,
+            'cmp1':com,
+            'allmodules':allmodules,
+            'bank':bank,
+            'banks':banks,
+            'all_banks':all_banks,
+            
+        }  
+    return render(request,'company/banking/Fin_edit_bank_trans.html',context)
+
+def Fin_edit_bank_to_cash(request,id):
+    if 's_id' in request.session:
+        s_id = request.session['s_id']
+
+        login_det = Fin_Login_Details.objects.get(id = s_id) 
+
+        if login_det.User_Type == 'Company':
+            com = Fin_Company_Details.objects.get(Login_Id = login_det)
+            company = com
+        elif login_det.User_Type == 'Staff':
+            com = Fin_Staff_Details.objects.get(Login_Id = login_det)
+            company = com.company_id
+
+        if request.method == 'POST':
+            f_bank = request.POST.get('bank')
+            amount = request.POST.get('amount')
+            adj_date = request.POST.get('adjdate')
+            desc = request.POST.get('desc')
+
+            
+            transaction = Fin_BankTransactions.objects.get(id=id)
+            bank = Fin_Banking.objects.get(id=f_bank)
+            bank.current_balance = bank.current_balance -(int(amount) - transaction.amount)
+            bank.save()
+            
+            transaction.banking.bank_name = f_bank
+            transaction.amount=amount
+            transaction.description=desc
+            transaction.adjustment_date=adj_date
+            transaction.current_balance= bank.current_balance               
+           
+            transaction.save()
+            transaction_history = Fin_BankTransactionHistory(
+                login_details = login_det,
+                company = company,
+                bank_transaction = transaction,
+                action = 'Updated'
+            )
+            transaction_history.save()
+            
+        return redirect('Fin_view_bank',bank.id)
+
+
+def Fin_edit_cash_to_bank(request,id):
+    if 's_id' in request.session:
+        s_id = request.session['s_id']
+
+        login_det = Fin_Login_Details.objects.get(id = s_id) 
+
+        if login_det.User_Type == 'Company':
+            com = Fin_Company_Details.objects.get(Login_Id = login_det)
+            company = com
+        elif login_det.User_Type == 'Staff':
+            com = Fin_Staff_Details.objects.get(Login_Id = login_det)
+            company = com.company_id
+
+        if request.method == 'POST':
+            f_bank = request.POST.get('bank')
+            amount = request.POST.get('amount')
+            adj_date = request.POST.get('adjdate')
+            desc = request.POST.get('desc')
+
+            
+            transaction = Fin_BankTransactions.objects.get(id=id)
+            bank = Fin_Banking.objects.get(id=f_bank)
+            bank.current_balance = bank.current_balance + (int(amount) - transaction.amount)
+            bank.save()
+            
+            transaction.banking.bank_name = f_bank
+            transaction.amount=amount
+            transaction.description=desc
+            transaction.adjustment_date=adj_date
+            transaction.current_balance= bank.current_balance               
+           
+            transaction.save()
+            transaction_history = Fin_BankTransactionHistory(
+                login_details = login_det,
+                company = company,
+                bank_transaction = transaction,
+                action = 'Updated'
+            )
+            transaction_history.save()
+            
+        return redirect('Fin_view_bank',bank.id)
+    
+
+def Fin_edit_bank_adjust(request,id):
+    if 's_id' in request.session:
+        s_id = request.session['s_id']
+
+        login_det = Fin_Login_Details.objects.get(id = s_id) 
+
+        if login_det.User_Type == 'Company':
+            com = Fin_Company_Details.objects.get(Login_Id = login_det)
+            company = com
+        elif login_det.User_Type == 'Staff':
+            com = Fin_Staff_Details.objects.get(Login_Id = login_det)
+            company = com.company_id
+        transaction = Fin_BankTransactions.objects.get(id=id)
+        if request.method == 'POST':
+            f_bank = request.POST.get('bank')
+            type = request.POST.get('typ')
+            amount = request.POST.get('amount')
+            adj_date = request.POST.get('adjdate')
+            desc = request.POST.get('desc')
+
+            
+            bank = Fin_Banking.objects.get(id=f_bank)
+            if type == 'Increase Balance':
+                bank.current_balance = bank.current_balance + (int(amount) - transaction.amount)
+                bank.save()
+            else:
+                bank.current_balance = bank.current_balance - (int(amount) - transaction.amount)
+                bank.save()
+                    
+            transaction.banking.bank_name = f_bank
+            transaction.amount=amount
+            transaction.adjustment_type=type
+            transaction.description=desc
+            transaction.adjustment_date=adj_date
+            transaction.current_balance= bank.current_balance               
+           
+            transaction.save()
+            transaction_history = Fin_BankTransactionHistory(
+                login_details = login_det,
+                company = company,
+                bank_transaction = transaction,
+                action = 'Updated'
+            )
+            transaction_history.save()
+            
+        return redirect('Fin_view_bank',bank.id)
+
+def Fin_edit_bank_to_bank(request, transfer_id):
+    if 's_id' in request.session:
+        s_id = request.session['s_id']
+
+        login_det = Fin_Login_Details.objects.get(id = s_id) 
+
+        if login_det.User_Type == 'Company':
+            com = Fin_Company_Details.objects.get(Login_Id = login_det)
+            company = com
+        elif login_det.User_Type == 'Staff':
+            com = Fin_Staff_Details.objects.get(Login_Id = login_det)
+            company = com.company_id
+    if request.method == 'POST':
+        fbank_id = request.POST.get('fbank')
+        tbank_id = request.POST.get('tbank')
+
+        transfer = Fin_BankTransactions.objects.get(id=transfer_id)
+        transfer_to = Fin_BankTransactions.objects.get(id=transfer.bank_to_bank)
+        old_amt = transfer_to.amount
+        old_bank = Fin_Banking.objects.get(id = transfer.banking.id) if transfer.transaction_type == 'To Bank Transfer' else Fin_Banking.objects.get(id = transfer_to.banking.id)
+        fbank = Fin_Banking.objects.get(id=fbank_id)
+        tbank = Fin_Banking.objects.get(id=tbank_id)
+
+        if tbank_id != old_bank:
+            old_bank.current_balance -= old_amt
+            old_bank.save()
+
+        amount = request.POST.get('amount')
+
+        adj_date = request.POST.get('adjdate')
+        desc = request.POST.get('desc')
+
+        # Update the balances of the banking accounts
+        current_balance = transfer.current_balance
+        current_balance_trans_to = transfer_to.current_balance
+        current_balance_fm = fbank.current_balance
+        current_balance_to = tbank.current_balance
+
+
+        if transfer.transaction_type == 'To Bank Transfer':
+            if int(amount) > int(transfer.amount):
+                fbank.current_balance -= (int(amount) - int(transfer.amount))
+                tbank.current_balance += (int(amount) - int(transfer.amount))
+                transfer.current_balance += (int(amount) - int(transfer.amount))
+                transfer_to.current_balance -= (int(amount) - int(transfer.amount))
+
+            elif int(amount) < int(transfer.amount):
+                fbank.current_balance += (int(transfer.amount) - int(amount))
+                tbank.current_balance -= (int(transfer.amount)  - int(amount))
+                transfer.current_balance -= (int(transfer.amount)  - int(amount))
+                transfer_to.current_balance += (int(transfer.amount)  - int(amount))
+
+            else:
+                fbank.current_balance = current_balance_fm
+                tbank.current_balance = current_balance_to
+                transfer.current_balance = current_balance
+                transfer_to.current_balance = current_balance_trans_to
+
+        elif transfer.transaction_type == 'From Bank Transfer':
+            if int(amount) > int(transfer.amount):
+                fbank.current_balance -= (int(amount) - int(transfer.amount))
+                tbank.current_balance += (int(amount) - int(transfer.amount))
+                transfer.current_balance -= (int(amount) - int(transfer.amount))
+                transfer_to.current_balance += (int(amount) - int(transfer.amount))
+
+            elif int(amount) < int(transfer.amount):
+                fbank.current_balance += (int(transfer.amount) - int(amount))
+                tbank.current_balance -= (int(transfer.amount) - int(amount))
+                transfer.current_balance += (int(transfer.amount) - int(amount))
+                transfer_to.current_balance -= (int(transfer.amount) - int(amount))
+
+            else:
+                fbank.current_balance = current_balance_fm
+                tbank.current_balance = current_balance_to
+                transfer.current_balance = current_balance
+                transfer_to.current_balance = current_balance_trans_to
+
+
+        if transfer.transaction_type == 'To Bank Transfer':
+            transfer.from_type = 'From : ' + fbank.bank_name
+            transfer.to_type = ' To : ' + tbank.bank_name
+            transfer.banking=tbank
+            transfer_to.from_type = 'From : ' + fbank.bank_name
+            transfer_to.to_type = ' To : ' + tbank.bank_name
+            transfer_to.banking=fbank
+            if tbank_id != transfer_to.banking:  # Check if the destination bank has changed
+            # Adjust balances for the old and new banks
+                transfer.banking.current_balance += int(amount)
+                transfer.save()
+                tbank.save()
+                tbank.current_balance == transfer_to.current_balance
+        elif transfer.transaction_type == 'From Bank Transfer':
+            transfer.from_type = 'From : ' + fbank.bank_name
+            transfer.to_type = ' To : ' + tbank.bank_name
+            transfer.banking=fbank
+            transfer_to.from_type = 'From : ' + fbank.bank_name
+            transfer_to.to_type = ' To : ' + tbank.bank_name
+            transfer_to.banking=tbank
+            # Before saving the changes to transfer and transfer_to
+            if tbank_id != transfer_to.banking:  # Check if the destination bank has changed
+            # Adjust balances for the old and new banks
+                transfer_to.banking.current_balance += int(amount)
+                transfer_to.save()
+                tbank.save()
+                tbank.current_balance == transfer_to.current_balance
+
+            
+        
+        transfer.amount = amount
+        transfer.adjustment_date = adj_date
+        transfer.description = desc
+        transfer_to.amount = amount
+        transfer_to.adjustment_date = adj_date
+        transfer_to.description = desc
+        
+        fbank.save()
+        tbank.save()
+        transfer.save()
+        transfer_to.save()
+
+        
+
+        transaction_history = Fin_BankTransactionHistory(
+                login_details = login_det,
+                company = company,
+                bank_transaction = transfer,
+                action = 'Updated'
+            )
+        transaction_history.save()
+
+        return redirect('Fin_banking_listout')
+    
+
+    
+def Fin_bank_transcation_history(request,id):
+    if 's_id' in request.session:
+        s_id = request.session['s_id']
+
+        login_det = Fin_Login_Details.objects.get(id = s_id) 
+
+        if login_det.User_Type == 'Company':
+            com = Fin_Company_Details.objects.get(Login_Id = login_det)
+            company = com
+        elif login_det.User_Type == 'Staff':
+            com = Fin_Staff_Details.objects.get(Login_Id = login_det)
+            company = com.company_id
+
+        allmodules = Fin_Modules_List.objects.get(company_id = company,status = 'New')
+
+        bank=Fin_BankTransactionHistory.objects.filter(bank_transaction = id)
+        all_banks = Fin_Banking.objects.filter(company = company)
+
+        context = {
+                'login_det':login_det,
+                'com':com,
+                'allmodules':allmodules,
+                'bank':bank,
+                'all_banks':all_banks,
+               
+            }  
+       
+        return render(request,'company/banking/Fin_bank_transcation_history.html',context)
+    
+
+def Fin_edit_bank_account(request,id):
+    if 's_id' in request.session:
+        s_id = request.session['s_id']
+
+        login_det = Fin_Login_Details.objects.get(id = s_id) 
+
+        if login_det.User_Type == 'Company':
+            com = Fin_Company_Details.objects.get(Login_Id = login_det)
+            company = com
+        elif login_det.User_Type == 'Staff':
+            com = Fin_Staff_Details.objects.get(Login_Id = login_det)
+            company = com.company_id
+
+        allmodules = Fin_Modules_List.objects.get(company_id = company,status = 'New')
+
+        bank = Fin_Banking.objects.get(id = id)
+        old_op_blnc = int(bank.opening_balance)
+        transactions = Fin_BankTransactions.objects.filter(banking=bank)
+        transactions_count = Fin_BankTransactions.objects.filter(banking=bank).count()
+
+        
+        if request.method == 'POST':
+            bname = request.POST.get('bname')
+            ifsc = request.POST.get('ifsc')
+            branch = request.POST.get('branch')
+            opening_balance = request.POST.get('Opening')
+            date = request.POST.get('date')
+            opening_blnc_type = request.POST.get('op_type')
+            acc_num = request.POST.get('acc_num')
+            
+            if opening_blnc_type == 'CREDIT':
+                opening_balance = 0 -int(opening_balance)
+
+            if old_op_blnc == int(opening_balance):
+                print('same')
+                bank.login_details = login_det
+                bank.company = company
+                bank.bank_name=bname
+                bank.ifsc_code=ifsc
+                bank.branch_name=branch
+                bank.opening_balance=opening_balance 
+                bank.opening_balance_type = opening_blnc_type
+                bank.date=date
+                bank.current_balance=opening_balance
+                bank.account_number=acc_num
+                bank.save()
+
+                banking_history = Fin_BankingHistory(
+                    login_details = login_det,
+                    company = company,
+                    banking = bank,
+                    action = 'Updated'
+                )
+                banking_history.save()
+
+            elif old_op_blnc < int(opening_balance): 
+
+                print('increase')
+                increased_amount =  int(opening_balance) - old_op_blnc 
+                print('increased_amount')
+                bank.login_details = login_det
+                bank.company = company
+                bank.bank_name=bname
+                bank.ifsc_code=ifsc
+                bank.branch_name=branch
+                bank.opening_balance=opening_balance 
+                bank.opening_balance_type = opening_blnc_type
+                bank.date=date
+                bank.current_balance += int(increased_amount)
+                bank.account_number=acc_num
+                bank.save()
+
+                banking_history = Fin_BankingHistory(
+                    login_details = login_det,
+                    company = company,
+                    banking = bank,
+                    action = 'Updated'
+                )
+                banking_history.save() 
+
+                for t in transactions:
+                    print('for')
+                    print(t)
+                    t.login_details_id = login_det.id
+                    t.company_id = company.id
+                    t.banking_id = bank.id
+                    if t.transaction_type == "Opening Balance":
+                        t.amount = t.amount + int(increased_amount)
+                    t.current_balance = t.current_balance + int(increased_amount)
+                    t.save()
+
+                transaction_history = Fin_BankTransactionHistory(
+                    login_details = login_det,
+                    company = company,
+                    bank_transaction = t,
+                    action = 'Updated'
+                )
+                transaction_history.save() 
+
+            elif old_op_blnc > int(opening_balance): 
+
+                print('decrease')  
+                decreased_amount =  old_op_blnc - int(opening_balance)
+                print('decreased_amount')
+                bank.login_details = login_det
+                bank.company = company
+                bank.bank_name=bname
+                bank.ifsc_code=ifsc
+                bank.branch_name=branch
+                bank.opening_balance=opening_balance 
+                bank.opening_balance_type = opening_blnc_type
+                bank.date=date
+                bank.current_balance = bank.current_balance - int(decreased_amount)
+                bank.account_number=acc_num
+                bank.save()
+
+                banking_history = Fin_BankingHistory(
+                    login_details = login_det,
+                    company = company,
+                    banking = bank,
+                    action = 'Updated'
+                )
+                banking_history.save() 
+
+                for t in transactions:
+                    print(t)
+                    t.login_details_id = login_det.id
+                    t.company_id = company.id
+                    t.banking_id = bank.id
+                    if t.transaction_type == "Opening Balance":
+                        t.amount = t.amount - int(decreased_amount)
+                    t.current_balance = t.current_balance - int(decreased_amount)
+                    t.save()
+
+                transaction_history = Fin_BankTransactionHistory(
+                    login_details = login_det,
+                    company = company,
+                    bank_transaction = t,
+                    action = 'Updated'
+                )
+                transaction_history.save()       
+                        
+    return redirect('Fin_view_bank',bank.id)
+    
+# def Fin_edit_bank_account(request, id):
+#     if 's_id' in request.session:
+#         s_id = request.session['s_id']
+
+#         login_det = Fin_Login_Details.objects.get(id=s_id)
+
+#         if login_det.User_Type == 'Company':
+#             com = Fin_Company_Details.objects.get(Login_Id=login_det)
+#             company = com
+#         elif login_det.User_Type == 'Staff':
+#             com = Fin_Staff_Details.objects.get(Login_Id=login_det)
+#             company = com.company_id
+
+#         allmodules = Fin_Modules_List.objects.get(company_id=company, status='New')
+#         transaction = Fin_BankTransactions.objects.get(id=id)
+#         bank = Fin_Banking.objects.get(id=transaction.banking_id)
+
+#         if request.method == 'POST':
+#             bname = request.POST.get('bname')
+#             ifsc = request.POST.get('ifsc')
+#             branch = request.POST.get('branch')
+#             opening_balance = request.POST.get('Opening')
+#             date = request.POST.get('date')
+#             opening_blnc_type = request.POST.get('op_type')
+#             acc_num = request.POST.get('acc_num')
+
+#             if opening_blnc_type == 'DEBIT':
+#                 if int(opening_balance) > bank.opening_balance:
+#                     bank.current_balance += (int(opening_balance) - (bank.opening_balance) )
+#                     transaction.current_balance += (int(opening_balance) - (transaction.amount) )
+#                 elif int(opening_balance) < bank.opening_balance:
+#                     bank.current_balance -= ((bank.opening_balance) - int(opening_balance) )
+#                     transaction.current_balance -= ((transaction.amount) - int(opening_balance) )
+#                 else:
+#                     bank.current_balance = bank.current_balance
+#                     transaction.current_balance = transaction.current_balance
+#             elif opening_blnc_type == 'CREDIT':
+#                 if int(opening_balance) > bank.opening_balance:
+#                     bank.current_balance += (int(opening_balance) - bank.opening_balance)
+#                     transaction.current_balance += (int(opening_balance) - (transaction.amount) )
+#                 elif int(opening_balance) < bank.opening_balance:
+#                     bank.current_balance -= (bank.opening_balance) - (int(opening_balance) )
+#                     transaction.current_balance -= (transaction.amount) - (int(opening_balance) )
+#                 else:
+#                     bank.current_balance = bank.current_balance
+#                     transaction.current_balance = transaction.current_balance
+
+#             # Update the Fin_Banking table
+#             bank.bank_name = bname
+#             bank.ifsc_code = ifsc
+#             bank.branch_name = branch
+#             bank.opening_balance = int(opening_balance)
+#             bank.opening_balance_type = opening_blnc_type
+#             bank.date = date
+#             bank.account_number = acc_num
+#             bank.bank_status = 'Active'
+#             bank.save()
+
+#             # Update the Fin_BankTransactions table
+#             transaction.amount = int(opening_balance)
+#             transaction.adjustment_date = date
+#             transaction.save()
+
+#             # Log the banking history
+#             banking_history = Fin_BankingHistory(
+#                 login_details=login_det,
+#                 company=company,
+#                 banking=bank,
+#                 action='Updated'
+#             )
+#             banking_history.save()
+
+#             # Log the transaction history
+#             transaction_history = Fin_BankTransactionHistory(
+#                 login_details=login_det,
+#                 company=company,
+#                 bank_transaction=transaction,
+#                 action='Updated'
+#             )
+#             transaction_history.save()
+
+#             return redirect('Fin_banking_listout')
+
+#     return render(request,"Fin_edit_bank_trans.html")
+
+
+def Fin_bank_transaction_delete(request,id):
+  transaction = Fin_BankTransactions.objects.get(id=id)
+  bank = Fin_Banking.objects.get(id=transaction.banking_id)
+#   transfer_to = Fin_BankTransactions.objects.get(id=transaction.bank_to_bank)
+  try:
+        transfer_to = Fin_BankTransactions.objects.get(id=transaction.bank_to_bank)
+  except:
+        transfer_to = None
+
+  try:
+        bank_to = Fin_Banking.objects.get(id=transfer_to.banking.id)
+  except:
+        transfer_to = None
+
+
+  if transaction.transaction_type=='Cash Withdraw':
+    bank.current_balance = bank.current_balance + transaction.amount
+  elif transaction.transaction_type=='Cash Deposit':
+    bank.current_balance = bank.current_balance - transaction.amount
+  elif transaction.adjustment_type=='Reduce Balance':
+    bank.current_balance = bank.current_balance + transaction.amount
+  elif transaction.adjustment_type=='Increase Balance':
+    bank.current_balance = bank.current_balance - transaction.amount
+  elif transaction.transaction_type=='From Bank Transfer':
+    bank.current_balance = bank.current_balance + transaction.amount
+    bank_to.current_balance = bank_to.current_balance - transfer_to.amount
+  elif transaction.transaction_type=='To Bank Transfer':
+    bank.current_balance = bank.current_balance - transaction.amount
+    bank_to.current_balance = bank_to.current_balance + transfer_to.amount
+  else:
+    bank.current_balance = bank.current_balance - transaction.amount
+  bank.save()
+  try:
+    bank_to.save()
+  except:
+    bank_to = None
+  transaction.delete()
+  try:
+    transfer_to.delete()
+  except:
+    transfer_to = None
+#   transfer_to.delete()
+  return redirect('Fin_banking_listout')
 
 
